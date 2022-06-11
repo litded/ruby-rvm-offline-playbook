@@ -1,29 +1,30 @@
 - hosts: all
   become: true
+  vars:
+    user: user
   tasks:
-
     - name: Creates rvm directory
       ansible.builtin.file:
-        path: /home/user/rvm
+        path: /home/{{user}}/rvm
         state: directory
-        owner: user
-        group: user
+        owner: "{{user}}"
+        group: "{{user}}"
 
     - name: Copying archive
       copy:
         src: data
-        dest: /home/user
-        owner: user
-        group: user
+        dest: /home/{{user}}
+        owner: "{{user}}"
+        group: "{{user}}"
         mode: '0775'
 
     - name: Unarchive rvm
       unarchive:
-        src: /home/user/data/rvm-stable.tar.gz
-        dest: /home/user/rvm
+        src: /home/{{user}}/data/rvm-stable.tar.gz
+        dest: /home/{{user}}/rvm
         remote_src: yes
-        owner: user
-        group: user
+        owner: "{{user}}"
+        group: "{{user}}"
         list_files: yes
       register: archive_contents
 
@@ -53,11 +54,11 @@
 
     - name: Install rvm (and libssl)
       shell:
-        cmd: export ARC=/home/user/rvm/{{ archive_contents.files[0].split('/')[0] }} &&  chmod +x /home/user/data/install-rvm.sh  && /home/user/data/install-rvm.sh 2&> /dev/null
+        cmd: export ARC=/home/{{user}}/rvm/{{ archive_contents.files[0].split('/')[0] }} &&  chmod +x /home/{{user}}/data/install-rvm.sh  && /home/{{user}}/data/install-rvm.sh 2&> /dev/null
 
     - name: Copying modules
       copy:
-        src: /home/user/data/{{ item }}
+        src: /home/{{user}}/data/{{ item }}
         dest: /srv/rvm/archives/
         remote_src: yes
         owner: root
@@ -70,13 +71,13 @@
 
     - name: Appending the group 'rvm' to the user's groups
       user:
-        name: user
+        name: "{{user}}"
         groups: rvm
         append: yes
 
     - name: Install ruby
       become: true 
-      shell: chmod +x /home/user/data/install-ruby.sh  && /home/user/data/install-ruby.sh
+      shell: chmod +x /home/{{user}}/data/install-ruby.sh  && /home/{{user}}/data/install-ruby.sh
 
     - name: Reset ssh connection to allow user changes to affect 'current login user'
       meta: reset_connection
@@ -90,5 +91,5 @@
         path={{ item }}
         state=absent
       with_items:
-        - "/home/user/data"
-        - "/home/user/rvm"
+        - "/home/{{user}}/data"
+        - "/home/{{user}}/rvm"
